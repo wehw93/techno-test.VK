@@ -15,7 +15,7 @@
 ### 1. Клонирование репозитория
 ```bash
 git clone https://github.com/ваш-username/mattermost-voting-bot.git
-cd mattermost-voting-bot```
+cd mattermost-voting-bot
 
 ### 2. Настройка окружения
 
