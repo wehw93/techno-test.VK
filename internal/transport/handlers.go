@@ -6,62 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"voting-bot/internal/service"
-
 	"github.com/mattermost/mattermost-server/v6/model"
 )
 
-
-type MattermostTransport struct {
-	client          *model.Client4
-	user            *model.User
-	webSocket       *model.WebSocketClient
-	votingService   service.VotingService
-	commandHandlers map[string]func(string, string)
-}
-
-
-func NewMattermostTransport(url, token string, votingService service.VotingService) (*MattermostTransport, error) {
-	client := model.NewAPIv4Client(url)
-	client.SetToken(token)
-
-	user, _, err := client.GetMe("")
-	if err != nil {
-		return nil, err
-	}
-
-	ws, err := model.NewWebSocketClient4(url, token)
-	if err != nil {
-		return nil, err
-	}
-
-	transport := &MattermostTransport{
-		client:        client,
-		user:          user,
-		webSocket:     ws,
-		votingService: votingService,
-	}
-
-
-	transport.commandHandlers = map[string]func(string, string){
-		"create":  transport.handleCreate,
-		"vote":    transport.handleVote,
-		"results": transport.handleResults,
-		"end":     transport.handleEnd,
-		"delete":  transport.handleDelete,
-	}
-
-	return transport, nil
-}
-
-
-func (t *MattermostTransport) Start() {
-	t.webSocket.Listen()
-
-	for event := range t.webSocket.EventChannel {
-		t.handleEvent(event)
-	}
-}
 
 
 func (t *MattermostTransport) handleEvent(event *model.WebSocketEvent) {
@@ -91,7 +38,6 @@ func (t *MattermostTransport) handleEvent(event *model.WebSocketEvent) {
 	}
 }
 
-
 func (t *MattermostTransport) handleCreate(channelID, args string) {
 	id, options, err := t.votingService.CreateVoting(channelID, args)
 	if err != nil {
@@ -102,7 +48,6 @@ func (t *MattermostTransport) handleCreate(channelID, args string) {
 	msg := "Голосование создано с ID: " + id + "\nВарианты: " + strings.Join(options, ", ")
 	t.sendMessage(channelID, msg)
 }
-
 
 func (t *MattermostTransport) handleVote(channelID, args string) {
 	parts := strings.SplitN(args, " ", 2)
@@ -122,7 +67,6 @@ func (t *MattermostTransport) handleVote(channelID, args string) {
 
 	t.sendMessage(channelID, "Голос записан")
 }
-
 
 func (t *MattermostTransport) handleResults(channelID, id string) {
 	vote, err := t.votingService.GetResults(id)
@@ -156,7 +100,6 @@ func (t *MattermostTransport) handleEnd(channelID, id string) {
 
 	t.sendMessage(channelID, "Голосование завершено")
 }
-
 
 func (t *MattermostTransport) handleDelete(channelID, id string) {
 	err := t.votingService.DeleteVoting(id)

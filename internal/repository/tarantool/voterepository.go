@@ -1,4 +1,4 @@
-package repository
+package tarantool
 
 import (
 	"strconv"
@@ -8,13 +8,6 @@ import (
 	"github.com/tarantool/go-tarantool"
 )
 
-type VoteRepository interface {
-	CreateVote(channelID string, options []string) (string, error)
-	GetVote(id string) (*models.Vote, error)
-	AddVote(id string, option string) error
-	EndVote(id string) error
-	DeleteVote(id string) error
-}
 
 
 type TarantoolRepository struct {
@@ -22,7 +15,7 @@ type TarantoolRepository struct {
 }
 
 
-func NewTarantoolRepository(address string) (*TarantoolRepository, error) {
+func New(address string) (*TarantoolRepository, error) {
 	conn, err := tarantool.Connect(address, tarantool.Opts{})
 	if err != nil {
 		return nil, err
