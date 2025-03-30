@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: voting-server
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_ADDR=:8080
+      - TARANTOOL_ADDR=tarantool:3301
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      tarantool:
+        condition: service_healthy
+    networks:
+      - voting-network
+
+  tarantool:
+    image: tarantool/tarantool:2.10
+    container_name: voting-tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - tarantool-data:/var/lib/tarantool
+      - ./scripts/init.lua:/opt/tarantool/init.lua
+    healthcheck:
+      test: ["CMD", "tarantool", "-e", "require('tarantool').ping()"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: 
+      - sh
+      - -c
+      - "mkdir -p /var/log && touch /var/log/tarantool.log && chmod 777 /var/log/tarantool.log && tarantool /opt/tarantool/init.lua"
+    networks:
+      - voting-network
+
+networks:
+  voting-network:
+    driver: bridge
+
+volumes:
+  tarantool-data:
